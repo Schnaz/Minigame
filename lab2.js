@@ -14,6 +14,9 @@ Math.dsin = function(degrees) {
 Math.dcos = function(degrees) {
     return Math.cos(degrees * Math.PI / 180);
 };
+function mod(num, mod) {
+	return ((num % mod) + mod) % mod;
+}
 
 //moving object variables
 var mx = 0; // x direction of motion
@@ -229,8 +232,8 @@ function render(time) {
 	xpos+=vx*0.005;
 	ypos+=vy*0.005;
 	ang -=mx*0.05;
-	xpos = ((ypos+1) % 2)-1;
-	ypos = ((ypos+1) % 2)-1;
+	xpos = mod(xpos+1,2)-1;
+	ypos = mod(ypos-1,2)-1;
  
 	// Convert clip space to pixels
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
