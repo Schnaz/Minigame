@@ -16,12 +16,15 @@ Math.dcos = function(degrees) {
 };
 
 //moving object variables
-var mx = 1; // x direction of motion
+var mx = 0; // x direction of motion
 var my = 0; // y direction of motion
+var vx = 0;
+var vy = 0;
+var va = 0;
 var xpos=0; // x postion
 var ypos=0; // y postion
 var rot = false; // is it rotating?
-var ang = 0.8; // object angle
+var ang = 0; // object angle
 var spd = 1; // move/rotation speed
 
 //webgl canvas element
@@ -106,16 +109,13 @@ gl.bindVertexArray(vao);
 // buffer for position data //////////////////////////////////////////////////
 const pb = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, pb);
-const numVertices = 8;
+const numVertices = 4;
 var verts = new Float32Array([
-   -0.25,  0, 
-   -0.1,   0.1, 
-   -0.1,  -0.1, 
-	0,     0.25,
-	0,    -0.25,
-	0.1,   0.1, 
-	0.1,  -0.1, 
-	0.25,  0
+   -0.25, -0.25, 
+    0,     0.25, 
+    0,     -0.1, 
+    0.25, -0.25
+
 ]);
 
 gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
@@ -124,7 +124,7 @@ gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
 gl.enableVertexAttribArray(posLoc);
 gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-const numInstances = 2;
+const numInstances = 1;
 
 // buffer for matrix data //////////////////////////////////////////////////
 const mb = gl.createBuffer();
@@ -221,10 +221,15 @@ function render(time) {
 	gl.clearColor(0.0, 0.0, 0.0, 1.0);
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	time *= 0.001; // seconds
+	score.value=Math.round(time);
 	
-	xpos+=spd*mx*0.005;
-	ypos+=spd*my*0.005;
-	ang+=(1+spd)*rot*0.005;
+	vx+=my*Math.sin(-ang)*0.1;
+	vy+=my*Math.cos(-ang)*0.1;
+	//va+=mx*0.1;
+	xpos+=vx*0.005;
+	ypos+=vy*0.005;
+	ang -=mx*0.05;
+	if (xpos>1) xpos-=2;
  
 	// Convert clip space to pixels
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
@@ -234,7 +239,7 @@ function render(time) {
 	gl.bindVertexArray(vao);
 
 	for(i = 0; i<numInstances; i++) {
-		matDat.set(createMat(xpos, ypos, 0, 1, 1, ang*(i+1)), i*16)
+		matDat.set(createMat(xpos, ypos, 0, 0.5, 0.5, ang*(i+1)), i*16)
 	};
 	gl.bindBuffer(gl.ARRAY_BUFFER, mb);
 	gl.bufferSubData(gl.ARRAY_BUFFER, 0, matDat);
@@ -251,20 +256,33 @@ document.addEventListener('keydown', (event) => {
 	console.log(`Key pressed: ${event.key} | Code: ${event.code}`);
 	switch(event.key) {
 		case 'w': //up
-		mx=0;
-		my=1;
+		if (my!=1) my+=1;
 		break;
 		case 'a': //left
-		mx=-1;
-		my=0;
+		if (mx!=-1) mx-=1;
 		break;
 		case 's': //down
-		mx=0;
-		my=-1;
+		if (my!=-1) my-=1;
 		break;
 		case 'd': //right
-		mx=1;
-		my=0;
+		if (mx!=1) mx+=1;
+		break;
+	}
+});
+document.addEventListener('keyup', (event) => {
+	console.log(`Key released: ${event.key} | Code: ${event.code}`);
+	switch(event.key) {
+		case 'w': //up
+		if (my!=-1) my-=1;
+		break;
+		case 'a': //left
+		if (mx!=1) mx+=1;
+		break;
+		case 's': //down
+		if (my!=1) my+=1;
+		break;
+		case 'd': //right
+		if (mx!=-1) mx-=1;
 		break;
 	}
 });
