@@ -229,8 +229,8 @@ function render(time) {
 	xpos+=vx*0.005;
 	ypos+=vy*0.005;
 	ang -=mx*0.05;
-	xpos = 0;
-	ypos = (ypos+1) % 2;
+	xpos = ((ypos+1) % 2)-1;
+	ypos = ((ypos+1) % 2)-1;
  
 	// Convert clip space to pixels
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
