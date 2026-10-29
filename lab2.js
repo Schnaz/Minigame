@@ -14,8 +14,21 @@ Math.dsin = function(degrees) {
 Math.dcos = function(degrees) {
     return Math.cos(degrees * Math.PI / 180);
 };
+// modulo function
 function mod(num, mod) {
 	return ((num % mod) + mod) % mod;
+}
+// function for creating matrices from scratch (for translation, scaling, & rotation)
+function createMat(x, y, z, sx, sy, angle) {
+const c = Math.cos(angle);
+const s = Math.sin(angle);
+const tMat = new Float32Array([
+	c * sx,	s * sx,	0,		0,
+   -s * sy,	c * sy,	0,		0,
+    0,		0,		1,		0,
+    x,		y,		z,		1
+]);
+return tMat;
 }
 
 //moving object variables
@@ -51,6 +64,7 @@ function createShader(gl, type, source) {
 		return null;
 	}
 	return shader;
+	
 }
           
 //get raw text for each shader from script
@@ -63,7 +77,6 @@ function createShader(gl, type, source) {
 //vertex shader source
 const vSource = `#version 300 es
 in vec4 position;
-in vec4 color;
 in mat4 matrix;
 in vec2 inTexCoord;
 out vec4 inColor;
@@ -71,7 +84,6 @@ out vec2 outTexCoord;
 
 void main() {
 	gl_Position = matrix * position;
-	inColor = color;
 	outTexCoord = inTexCoord;
 }
 `;
@@ -81,11 +93,11 @@ const fSource = `#version 300 es
 precision highp float;
 in vec2 outTexCoord;
 uniform sampler2D u_image;
-in vec4 inColor;
+uniform vec4 color;
 out vec4 outColor;
  
 void main() {
-	outColor = texture(u_image, outTexCoord) * inColor;
+	outColor = texture(u_image, outTexCoord) * color;
 }
 `;
 
@@ -99,11 +111,102 @@ gl.attachShader(program, vShader);
 gl.attachShader(program, fShader);
 gl.linkProgram(program);
 
+objs=[[],[],[],[],[],[],[],[],[]]; //call length to get the number of objects to draw for an instance
+
+
+
+class phyobj {
+	constuctor(x, y, a, vx, vy, va, type, col) {
+		this.x=x;
+		this.y=y;
+		this.a=a;
+		this.vx=vx;
+		this.vy=vy;
+		this.va=va;
+		this.type=type//types: Ship=0, bullet=1, blast=2, tri=3, quad=4, pent=5, hex=6, sept=7, oct=8
+		this.col=col
+		this.index=objs.length;
+		this.time=0;
+		objs[type].push[this];
+	}
+	step() {
+		this.time *= 0.001; // seconds
+
+		this.x+=vx*0.003125;
+		this.y+=vy*0.003125;
+		this,a-=va*0.05;
+
+	}
+	delete() {
+		objs[type].splice(index, 1);
+	}
+}
+class ship extends phyobj {
+	constructor(x, y, a, vx, vy, va, col) {
+		super(x, y, a, vx, vy, va, 0, col);
+	}
+	step() {
+		super.step()
+
+		if (my) {
+			this.vx+=this.my*Math.sin(-this.a)*0.1;
+			this.vy+=this.my*Math.cos(-this.a)*0.1;
+		}
+		if (-my) {
+			this.vx*=0.9;
+			this.vy*=0.9;
+		}
+		this.a-=this.mx*0.05;
+
+		this.x = mod(this.x+1,2)-1;
+		this.y = mod(this.y-1,2)-1;
+	}
+}
+class bullet extends phyobj {
+	constructor(x, y, a, vx, vy, va, col) {
+		super(x, y, a, vx, vy, va, 1, col);
+	}
+	step() {
+		super.step()
+
+		if (this.x <= -1 || this.x >= 1 || this.y <= -1 || this.y >= 1) super.delete();
+	}
+}
+class blast extends phyobj {
+	constructor(x, y, a, vx, vy, va, type, col) {
+		super(x, y, a, vx, vy, va, type, col);
+	}
+	step() {
+		super.step()
+
+		//just an animation
+	}
+}
+class asteroid extends phyobj {
+	constructor(x, y, a, vx, vy, va, type, col) {
+		super(x, y, a, vx, vy, va, type, col);
+	}
+	step() {
+		super.step()
+
+		this.x = mod(this.x+1,2)-1;
+		this.y = mod(this.y-1,2)-1;
+
+		//bounce of asteroids, break on ship/bullet
+	}
+}
+
+//create 
+
+//start here
+
 //Setting all attribute locations
 const posLoc = gl.getAttribLocation(program, 'position');
-const colLoc = gl.getAttribLocation(program, 'color');
+const colLoc = gl.getUniformLocation(program, 'color');
 const matLoc = gl.getAttribLocation(program, 'matrix');
 const texLoc = gl.getAttribLocation(program, "inTexCoord");
+
+//fromhere
 
 // Create & bind vertex array object
 const vao = gl.createVertexArray();
@@ -127,7 +230,7 @@ gl.bufferData(gl.ARRAY_BUFFER, verts, gl.STATIC_DRAW);
 gl.enableVertexAttribArray(posLoc);
 gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
 
-const numInstances = 1;
+const numInstances = 3;//FIXME
 
 // buffer for matrix data //////////////////////////////////////////////////
 const mb = gl.createBuffer();
@@ -144,36 +247,28 @@ for (let i = 0; i < 4; ++i) {
 	gl.vertexAttribDivisor(loc, 1);
 }
 
-// function for creating matrices from scratch (for translation, scaling, & rotation)
-function createMat(x, y, z, sx, sy, angle) {
-const c = Math.cos(angle);
-const s = Math.sin(angle);
-const tMat = new Float32Array([
-	c * sx,	s * sx,	0,		0,
-   -s * sy,	c * sy,	0,		0,
-    0,		0,		1,		0,
-    x,		y,		z,		1
-]);
-return tMat;
-}
-
 // buffer for color data //////////////////////////////////////////////////
+
+/*
 const cb = gl.createBuffer();
 gl.bindBuffer(gl.ARRAY_BUFFER, cb);
 gl.bufferData(gl.ARRAY_BUFFER,
 	new Float32Array([
-		1, 0.5, 0, 1,// orange
-		1, 1, 0, 1,  // yellow
-		1, 0, 0, 1,  // red
-		0, 1, 0, 1,  // green
-		0, 0, 1, 1,  // blue
-		1, 0, 1, 1,  // magenta
-		0, 1, 1, 1,  // cyan
+		1, 0.5, 0, 0.1,// orange
+		1, 1, 0, 0.1,  // yellow
+		1, 0, 0, 0.1,  // red
+		0, 1, 0, 0.1,  // green
+		0, 0, 1, 0.1,  // blue
+		1, 0, 1, 0.1,  // magenta
+		0, 1, 1, 0.1,  // cyan
+		1, 0.5, 0, 0.1,// orange
+		1, 1, 0, 0.1,  // yellow
 	]),
 	gl.STATIC_DRAW);
 gl.enableVertexAttribArray(colLoc);
 gl.vertexAttribPointer(colLoc, 4, gl.FLOAT, false, 0, 0);
 gl.vertexAttribDivisor(colLoc, 1);
+*/
 
 // buffer for texture data (not used in this lab) /////////////////////////
 const tb = gl.createBuffer();
@@ -182,11 +277,7 @@ gl.bindBuffer(gl.ARRAY_BUFFER, tb);
 		0,   0.5,
 		0.3, 0.7,
 		0.3, 0.3,
-		0.5, 1,
-		0.5, 0,
-		0.7, 0.7,
-		0.7, 0.3,
-		1,   0
+		0.5, 1
 	]), gl.DYNAMIC_DRAW);
 gl.enableVertexAttribArray(texLoc);
 gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
@@ -194,16 +285,18 @@ gl.vertexAttribPointer(texLoc, 2, gl.FLOAT, false, 0, 0);
 const texture = gl.createTexture();
 gl.bindTexture(gl.TEXTURE_2D, texture);
 
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+	gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
 
 gl.texImage2D(
 	gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0,
 	gl.RGBA, gl.UNSIGNED_BYTE,
 	new Uint8Array([255, 255, 255, 255])
 );
+
+//tohere
 
 const image = new Image();
 //image.crossOrigin = "anonymous"; 
@@ -228,10 +321,10 @@ function render(time) {
 	
 	vx+=my*Math.sin(-ang)*0.1;
 	vy+=my*Math.cos(-ang)*0.1;
-	//va+=mx*0.1;
-	xpos+=vx*0.005;
-	ypos+=vy*0.005;
 	ang -=mx*0.05;
+	//va+=mx*0.1;
+	xpos+=vx*0.003125;
+	ypos+=vy*0.003125;
 	xpos = mod(xpos+1,2)-1;
 	ypos = mod(ypos-1,2)-1;
  
@@ -239,11 +332,12 @@ function render(time) {
 	gl.viewport(0, 0, gl.canvas.width, gl.canvas.height);
 
 	gl.useProgram(program);
+	gl.uniform4f(colLoc, ...[1.0, 0.0, 0.0, 0.2]);
 
 	gl.bindVertexArray(vao);
 
 	for(i = 0; i<numInstances; i++) {
-		matDat.set(createMat(xpos, ypos, 0, 0.5, 0.5, ang*(i+1)), i*16)
+		matDat.set(createMat(xpos*(1+0.1*i), ypos*(1+0.1*i), 0, 0.5, 0.5, ang*(i+1)), i*16)
 	};
 	gl.bindBuffer(gl.ARRAY_BUFFER, mb);
 	gl.bufferSubData(gl.ARRAY_BUFFER, 0, matDat);
