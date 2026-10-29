@@ -229,7 +229,7 @@ function render(time) {
 	xpos+=vx*0.005;
 	ypos+=vy*0.005;
 	ang -=mx*0.05;
-	xpos = (xpos+1) % 2;
+	xpos = 0;
 	ypos = (ypos+1) % 2;
  
 	// Convert clip space to pixels
