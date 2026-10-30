@@ -2,18 +2,14 @@
 
 <!DOCTYPE html>
 <head>
-<title>Lab 2 - Adam Hume</title>
-<div>Score: <output id="score"> null</output> / 100</div>
+<title>Project 1 - Adam Hume</title>
+<div>Score: <output id="score"> null</output> | Remaining: <output id="rocks"> null</output></div>
 </head>
 <body style="display: grid; justify-content: center; background-color: #999999;">
 <!-- The canvas element where WebGL will draw -->
 <canvas id="Canvas" width="640" height="640"></canvas>
 <br>
 <div style="text-align: center;">
-<button onclick="spd+=0.2;">Increase</button>
-<button onclick="if (spd>0.1) spd-=0.2;">Decrease</button>
-<button onclick="rot=true;">StartRotate</button>
-<button onclick="rot=false;">StopRotate</button>
 </div>
 <!-- this is how to do shaders via script elements
 
@@ -38,4 +34,4 @@ outColor = vec4(inColor, 1.0f);
 </script>
 -->
 
-<script src="lab2.js" defer></script>
+<script src="Project1.js" defer></script>
